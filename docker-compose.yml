@@ -1,0 +1,116 @@
+services:
+
+  # ─────────────────────────────────────────
+  #  MICROSERVICES
+  # ─────────────────────────────────────────
+  auth-service:
+    build: ./services/auth
+    container_name: auth-service
+    ports:
+      - "5001:5001"
+    restart: unless-stopped
+    networks:
+      - chaos-net
+
+  payment-service:
+    build: ./services/payment
+    container_name: payment-service
+    ports:
+      - "5002:5002"
+    restart: unless-stopped
+    networks:
+      - chaos-net
+
+  inventory-service:
+    build: ./services/inventory
+    container_name: inventory-service
+    ports:
+      - "5003:5003"
+    restart: unless-stopped
+    networks:
+      - chaos-net
+
+  # ─────────────────────────────────────────
+  #  CHAOS ENGINE
+  # ─────────────────────────────────────────
+  chaos-engine:
+    build: ./chaos-engine
+    container_name: chaos-engine
+    ports:
+      - "8001:8001"
+    restart: unless-stopped
+    networks:
+      - chaos-net
+    depends_on:
+      - auth-service
+      - payment-service
+      - inventory-service
+
+  # ─────────────────────────────────────────
+  #  RUNBOOK AUTOMATOR
+  # ─────────────────────────────────────────
+  runbook-automator:
+    build: ./runbook-automator
+    container_name: runbook-automator
+    ports:
+      - "8002:8002"
+    restart: unless-stopped
+    networks:
+      - chaos-net
+    depends_on:
+      - auth-service
+      - payment-service
+      - inventory-service
+      - prometheus
+
+  # ─────────────────────────────────────────
+  #  PROMETHEUS
+  # ─────────────────────────────────────────
+  prometheus:
+    image: prom/prometheus:v2.51.0
+    container_name: prometheus-chaos
+    ports:
+      - "9091:9090"
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+      - ./prometheus/alert_rules.yml:/etc/prometheus/alert_rules.yml
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--storage.tsdb.retention.time=7d'
+      - '--web.enable-lifecycle'
+    restart: unless-stopped
+    networks:
+      - chaos-net
+
+  # ─────────────────────────────────────────
+  #  GRAFANA
+  # ─────────────────────────────────────────
+  grafana:
+    image: grafana/grafana:10.4.0
+    container_name: grafana-chaos
+    ports:
+      - "3001:3000"
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=securepassword123
+      - GF_USERS_ALLOW_SIGN_UP=false
+      - GF_DASHBOARDS_DEFAULT_HOME_DASHBOARD_PATH=/var/lib/grafana/dashboards/chaos_dashboard.json
+    volumes:
+      - ./grafana/provisioning:/etc/grafana/provisioning
+      - ./grafana/dashboards:/var/lib/grafana/dashboards
+      - grafana_data:/var/lib/grafana
+    restart: unless-stopped
+    networks:
+      - chaos-net
+    depends_on:
+      - prometheus
+
+networks:
+  chaos-net:
+    driver: bridge
+
+volumes:
+  prometheus_data:
+  grafana_data:

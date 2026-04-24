@@ -1,0 +1,36 @@
+global:
+  scrape_interval: 10s
+  evaluation_interval: 10s
+
+rule_files:
+  - "alert_rules.yml"
+
+scrape_configs:
+  - job_name: 'auth-service'
+    static_configs:
+      - targets: ['auth-service:5001']
+    metrics_path: /metrics
+
+  - job_name: 'payment-service'
+    static_configs:
+      - targets: ['payment-service:5002']
+    metrics_path: /metrics
+
+  - job_name: 'inventory-service'
+    static_configs:
+      - targets: ['inventory-service:5003']
+    metrics_path: /metrics
+
+  - job_name: 'chaos-engine'
+    static_configs:
+      - targets: ['chaos-engine:8001']
+    metrics_path: /metrics
+
+  - job_name: 'runbook-automator'
+    static_configs:
+      - targets: ['runbook-automator:8002']
+    metrics_path: /metrics
+
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']

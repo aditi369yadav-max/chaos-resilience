@@ -1,0 +1,265 @@
+{
+  "title": "SRE Chaos & Resilience Dashboard",
+  "uid": "chaos-resilience-v1",
+  "version": 1,
+  "schemaVersion": 38,
+  "refresh": "10s",
+  "time": { "from": "now-30m", "to": "now" },
+  "timezone": "browser",
+  "tags": ["chaos", "sre", "resilience", "slo"],
+  "style": "dark",
+  "panels": [
+
+    {
+      "id": 1,
+      "title": "🟢 Auth Service — p99 Latency",
+      "type": "gauge",
+      "gridPos": { "x": 0, "y": 0, "w": 4, "h": 5 },
+      "datasource": "Prometheus",
+      "targets": [{ "expr": "histogram_quantile(0.99, rate(auth_request_latency_seconds_bucket[1m]))", "legendFormat": "p99" }],
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "showThresholdMarkers": true },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s", "min": 0, "max": 5,
+          "thresholds": { "mode": "absolute", "steps": [
+            { "color": "green", "value": null },
+            { "color": "yellow", "value": 0.3 },
+            { "color": "red", "value": 0.5 }
+          ]}
+        }
+      }
+    },
+
+    {
+      "id": 2,
+      "title": "💳 Payment Service — p99 Latency",
+      "type": "gauge",
+      "gridPos": { "x": 4, "y": 0, "w": 4, "h": 5 },
+      "datasource": "Prometheus",
+      "targets": [{ "expr": "histogram_quantile(0.99, rate(payment_request_latency_seconds_bucket[1m]))", "legendFormat": "p99" }],
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "showThresholdMarkers": true },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s", "min": 0, "max": 5,
+          "thresholds": { "mode": "absolute", "steps": [
+            { "color": "green", "value": null },
+            { "color": "yellow", "value": 0.5 },
+            { "color": "red", "value": 1.0 }
+          ]}
+        }
+      }
+    },
+
+    {
+      "id": 3,
+      "title": "📦 Inventory Service — p99 Latency",
+      "type": "gauge",
+      "gridPos": { "x": 8, "y": 0, "w": 4, "h": 5 },
+      "datasource": "Prometheus",
+      "targets": [{ "expr": "histogram_quantile(0.99, rate(inventory_request_latency_seconds_bucket[1m]))", "legendFormat": "p99" }],
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "showThresholdMarkers": true },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s", "min": 0, "max": 5,
+          "thresholds": { "mode": "absolute", "steps": [
+            { "color": "green", "value": null },
+            { "color": "yellow", "value": 0.2 },
+            { "color": "red", "value": 0.3 }
+          ]}
+        }
+      }
+    },
+
+    {
+      "id": 4,
+      "title": "⚡ Chaos Active",
+      "type": "stat",
+      "gridPos": { "x": 12, "y": 0, "w": 4, "h": 5 },
+      "datasource": "Prometheus",
+      "targets": [{ "expr": "sum(chaos_active)", "legendFormat": "Active Chaos" }],
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "colorMode": "background", "graphMode": "none" },
+      "fieldConfig": {
+        "defaults": {
+          "mappings": [
+            { "type": "value", "options": { "0": { "text": "✅ NO CHAOS", "color": "green" }, "1": { "text": "⚡ CHAOS ACTIVE", "color": "red" } } }
+          ],
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }, { "color": "red", "value": 1 }] }
+        }
+      }
+    },
+
+    {
+      "id": 5,
+      "title": "🤖 Auto-Recoveries",
+      "type": "stat",
+      "gridPos": { "x": 16, "y": 0, "w": 4, "h": 5 },
+      "datasource": "Prometheus",
+      "targets": [{ "expr": "sum(auto_recoveries_total)", "legendFormat": "Total Recoveries" }],
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "colorMode": "background", "graphMode": "area" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "fixed", "fixedColor": "blue" },
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "blue", "value": null }] }
+        }
+      }
+    },
+
+    {
+      "id": 6,
+      "title": "⏱️ Mean Time to Recover (MTTR)",
+      "type": "bargauge",
+      "gridPos": { "x": 20, "y": 0, "w": 4, "h": 5 },
+      "datasource": "Prometheus",
+      "targets": [{ "expr": "mean_time_to_recover_seconds", "legendFormat": "{{service}}" }],
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "orientation": "horizontal", "displayMode": "gradient" },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "thresholds": { "mode": "absolute", "steps": [
+            { "color": "green", "value": null },
+            { "color": "yellow", "value": 30 },
+            { "color": "red", "value": 60 }
+          ]}
+        }
+      }
+    },
+
+    {
+      "id": 7,
+      "title": "📈 p99 Latency — All Services (Timeline)",
+      "type": "timeseries",
+      "gridPos": { "x": 0, "y": 5, "w": 24, "h": 8 },
+      "datasource": "Prometheus",
+      "targets": [
+        { "expr": "histogram_quantile(0.99, rate(auth_request_latency_seconds_bucket[1m]))", "legendFormat": "auth-service p99" },
+        { "expr": "histogram_quantile(0.99, rate(payment_request_latency_seconds_bucket[1m]))", "legendFormat": "payment-service p99" },
+        { "expr": "histogram_quantile(0.99, rate(inventory_request_latency_seconds_bucket[1m]))", "legendFormat": "inventory-service p99" }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "custom": { "lineWidth": 2, "fillOpacity": 10 },
+          "thresholds": { "mode": "absolute", "steps": [
+            { "color": "green", "value": null },
+            { "color": "red", "value": 1.0 }
+          ]}
+        }
+      },
+      "options": { "tooltip": { "mode": "multi" }, "legend": { "displayMode": "table", "placement": "right", "calcs": ["last", "max"] } }
+    },
+
+    {
+      "id": 8,
+      "title": "❌ Error Rate by Service (%)",
+      "type": "timeseries",
+      "gridPos": { "x": 0, "y": 13, "w": 12, "h": 7 },
+      "datasource": "Prometheus",
+      "targets": [
+        { "expr": "auth_error_rate * 100", "legendFormat": "auth-service" },
+        { "expr": "payment_error_rate * 100", "legendFormat": "payment-service" },
+        { "expr": "inventory_error_rate * 100", "legendFormat": "inventory-service" }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "custom": { "lineWidth": 2, "fillOpacity": 15 },
+          "thresholds": { "mode": "absolute", "steps": [
+            { "color": "green", "value": null },
+            { "color": "yellow", "value": 2 },
+            { "color": "red", "value": 10 }
+          ]}
+        }
+      }
+    },
+
+    {
+      "id": 9,
+      "title": "📊 Error Budget Remaining (%)",
+      "type": "bargauge",
+      "gridPos": { "x": 12, "y": 13, "w": 12, "h": 7 },
+      "datasource": "Prometheus",
+      "targets": [{ "expr": "error_budget_remaining_percent", "legendFormat": "{{service}}" }],
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "orientation": "horizontal", "displayMode": "lcd" },
+      "fieldConfig": {
+        "defaults": {
+          "min": 0, "max": 100, "unit": "percent",
+          "thresholds": { "mode": "absolute", "steps": [
+            { "color": "red", "value": null },
+            { "color": "orange", "value": 20 },
+            { "color": "yellow", "value": 50 },
+            { "color": "green", "value": 75 }
+          ]}
+        }
+      }
+    },
+
+    {
+      "id": 10,
+      "title": "⚡ Chaos Events Timeline",
+      "type": "timeseries",
+      "gridPos": { "x": 0, "y": 20, "w": 12, "h": 7 },
+      "datasource": "Prometheus",
+      "targets": [
+        { "expr": "chaos_active{service='auth-service'}", "legendFormat": "auth chaos" },
+        { "expr": "chaos_active{service='payment-service'}", "legendFormat": "payment chaos" },
+        { "expr": "chaos_active{service='inventory-service'}", "legendFormat": "inventory chaos" }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "custom": { "lineWidth": 3, "fillOpacity": 40 },
+          "mappings": [{ "type": "value", "options": { "0": { "text": "Normal" }, "1": { "text": "CHAOS" } } }]
+        }
+      }
+    },
+
+    {
+      "id": 11,
+      "title": "🔢 Request Rate by Service (req/sec)",
+      "type": "timeseries",
+      "gridPos": { "x": 12, "y": 20, "w": 12, "h": 7 },
+      "datasource": "Prometheus",
+      "targets": [
+        { "expr": "rate(auth_requests_total[1m])", "legendFormat": "auth - {{status}}" },
+        { "expr": "rate(payment_requests_total[1m])", "legendFormat": "payment - {{status}}" },
+        { "expr": "rate(inventory_requests_total[1m])", "legendFormat": "inventory - {{status}}" }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "reqps",
+          "custom": { "lineWidth": 1, "fillOpacity": 8 }
+        }
+      }
+    },
+
+    {
+      "id": 12,
+      "title": "🏃 Runbook Executions",
+      "type": "timeseries",
+      "gridPos": { "x": 0, "y": 27, "w": 12, "h": 7 },
+      "datasource": "Prometheus",
+      "targets": [{ "expr": "rate(runbook_executions_total[2m])", "legendFormat": "{{service}} - {{runbook}}" }],
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "fixed", "fixedColor": "purple" },
+          "custom": { "lineWidth": 2, "fillOpacity": 20 }
+        }
+      }
+    },
+
+    {
+      "id": 13,
+      "title": "🎯 Chaos Events Total (by type)",
+      "type": "bargauge",
+      "gridPos": { "x": 12, "y": 27, "w": 12, "h": 7 },
+      "datasource": "Prometheus",
+      "targets": [{ "expr": "chaos_events_total", "legendFormat": "{{service}} - {{chaos_type}}" }],
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "orientation": "horizontal", "displayMode": "gradient" },
+      "fieldConfig": {
+        "defaults": {
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "orange", "value": null }] }
+        }
+      }
+    }
+
+  ]
+}

@@ -1,0 +1,103 @@
+groups:
+  - name: slo_alerts
+    interval: 10s
+    rules:
+
+      - alert: AuthServiceHighLatency
+        expr: histogram_quantile(0.99, rate(auth_request_latency_seconds_bucket[1m])) > 0.5
+        for: 20s
+        labels:
+          severity: critical
+          service: auth-service
+        annotations:
+          summary: "🔴 Auth Service p99 latency breached SLO"
+          description: "p99 latency is {{ $value | printf \"%.2f\" }}s (SLO: 0.5s)"
+
+      - alert: PaymentServiceHighLatency
+        expr: histogram_quantile(0.99, rate(payment_request_latency_seconds_bucket[1m])) > 1.0
+        for: 20s
+        labels:
+          severity: critical
+          service: payment-service
+        annotations:
+          summary: "🔴 Payment Service p99 latency breached SLO"
+          description: "p99 latency is {{ $value | printf \"%.2f\" }}s (SLO: 1.0s)"
+
+      - alert: InventoryServiceHighLatency
+        expr: histogram_quantile(0.99, rate(inventory_request_latency_seconds_bucket[1m])) > 0.3
+        for: 20s
+        labels:
+          severity: critical
+          service: inventory-service
+        annotations:
+          summary: "🔴 Inventory Service p99 latency breached SLO"
+          description: "p99 latency is {{ $value | printf \"%.2f\" }}s (SLO: 0.3s)"
+
+      - alert: AuthServiceHighErrorRate
+        expr: auth_error_rate > 0.05
+        for: 20s
+        labels:
+          severity: critical
+          service: auth-service
+        annotations:
+          summary: "🔴 Auth Service error rate too high"
+          description: "Error rate is {{ $value | printf \"%.1%\" }} (SLO: 1%)"
+
+      - alert: PaymentServiceHighErrorRate
+        expr: payment_error_rate > 0.1
+        for: 20s
+        labels:
+          severity: critical
+          service: payment-service
+        annotations:
+          summary: "🔴 Payment Service error rate too high"
+          description: "Error rate is {{ $value | printf \"%.1%\" }} (SLO: 2%)"
+
+      - alert: SLOBreach
+        expr: slo_breach_active == 1
+        for: 0s
+        labels:
+          severity: critical
+        annotations:
+          summary: "🚨 SLO Breach: {{ $labels.service }}"
+          description: "Error budget exhausted for {{ $labels.service }}"
+
+      - alert: ErrorBudgetBurning
+        expr: error_budget_remaining_percent < 20
+        for: 30s
+        labels:
+          severity: warning
+        annotations:
+          summary: "⚠️ Error budget burning fast: {{ $labels.service }}"
+          description: "Only {{ $value | printf \"%.1f\" }}% error budget remaining"
+
+  - name: chaos_alerts
+    interval: 10s
+    rules:
+
+      - alert: ChaosInjectionActive
+        expr: chaos_active == 1
+        for: 0s
+        labels:
+          severity: warning
+        annotations:
+          summary: "⚡ Chaos active on {{ $labels.service }}"
+          description: "Chaos engine is currently injecting failures"
+
+      - alert: CPUStressDetected
+        expr: auth_cpu_stress_active == 1 or payment_cpu_stress_active == 1
+        for: 0s
+        labels:
+          severity: warning
+        annotations:
+          summary: "🔥 CPU stress detected"
+          description: "CPU stress injection active — runbook automator will recover"
+
+      - alert: MemoryStressDetected
+        expr: inventory_memory_stress_active == 1
+        for: 0s
+        labels:
+          severity: warning
+        annotations:
+          summary: "💾 Memory stress detected on inventory-service"
+          description: "Memory leak injection active"
